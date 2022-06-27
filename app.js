@@ -8,6 +8,11 @@ const port = 5000;
 
 // Mongoose Setup
 mongoose.connect("mongodb://localhost:27017/userDB", {useNewUrlParser: true});
+const userSchema = {
+  username: String,
+  password: String
+};
+const User = mongoose.model("User", userSchema);
 
 // Server Setup
 app.use(express.static("public"));
