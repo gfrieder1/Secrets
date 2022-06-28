@@ -3,7 +3,8 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const ejs = require("ejs");
 const mongoose = require("mongoose");
-const md5 = require("md5");
+const bcrypt = require("bcrypt");
+const saltRounds = 10;
 
 const app = express();
 const port = 5000;
@@ -28,7 +29,7 @@ app.set("view engine", "ejs");
 
 app.listen(port, function() {
   console.log("Server started on port " + port);
-})
+});
 
 // '/'
 // GET: View page
@@ -44,17 +45,19 @@ app.route("/register")
     res.render("register");
   })
   .post(function(req, res) {
-    const newUser = new User({
-      username: req.body.username,
-      passwordHash: md5(req.body.password)
-    });
+    bcrypt.hash(req.body.password, saltRounds, function(err, hash) {
+      const newUser = new User({
+        username: req.body.username,
+        passwordHash: hash
+      });
 
-    newUser.save(function(err) {
-      if (!err) res.render("secrets");
-      else {
-        console.log(err);
-        res.send(err);
-      }
+      newUser.save(function(err) {
+        if (!err) res.render("secrets");
+        else {
+          console.log(err);
+          res.send(err);
+        }
+      });
     });
   });
 
@@ -67,22 +70,21 @@ app.route("/login")
   .post(function(req, res) {
     // check if matching user credentials are found in the database
     const username = req.body.username;
-    const password = req.body.password;
 
-    User.findOne({email: username}, function(err, foundUser) {
-      if (!err) {
-        if (foundUser.passwordHash === md5(password)) {
-          console.log("User Login Sucessful")
-          res.render("secrets");
+    User.findOne({username: username}, function(err, foundUser) {
+      console.log(foundUser);
+      if (err) {
+        console.log(err);
+      } else {
+        if (foundUser) {
+          bcrypt.compare(req.body.password, foundUser.passwordHash).then(function(result) {
+            if (result) res.render("secrets");
+            else res.send("<script>alert(\"Invalid Username and/or Password\"); window.location.href = \"/login\"; </script>");
+          });
         }
         else {
-          res.send("<script>alert(\"Check Username and/or Password\"); window.location.href = \"/login\"; </script>");
-          // res.redirect("/login");
+          res.send("<script>alert(\"Invalid Username and/or Password\"); window.location.href = \"/login\"; </script>");
         }
-      }
-      else {
-        console.log(err);
-        res.send(err);
       }
     });
   });
