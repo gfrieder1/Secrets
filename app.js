@@ -72,9 +72,15 @@ app.route("/login")
     const password = req.body.password;
 
     User.findOne({email: username}, function(err, foundUser) {
-      if (!err && foundUser.password === password) {
-        console.log("User Login Sucessful")
-        res.render("secrets");
+      if (!err) {
+        if (foundUser.password === password) {
+          console.log("User Login Sucessful")
+          res.render("secrets");
+        }
+        else {
+          res.send("<script>alert(\"Check Username and/or Password\"); window.location.href = \"/login\"; </script>");
+          // res.redirect("/login");
+        }
       }
       else {
         console.log(err);
