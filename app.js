@@ -1,7 +1,9 @@
+require("dotenv").config();
 const express = require("express");
 const bodyParser = require("body-parser");
 const ejs = require("ejs");
 const mongoose = require("mongoose");
+const encrypt = require("mongoose-encryption");
 
 const app = express();
 const port = 5000;
@@ -10,10 +12,13 @@ const port = 5000;
 mongoose.connect("mongodb://localhost:27017/userDB", {
   useNewUrlParser: true
 });
-const userSchema = {
+const userSchema = new mongoose.Schema ({
   username: String,
   password: String
-};
+});
+const secret = process.env.SECRET_KEY;
+// THIS >NEEDS< TO COME BEFORE MAKING THE MODEL OR ELSE IT WON'T BE ENCRYPTED
+userSchema.plugin(encrypt, { secret: secret, encryptedFields: ['password'] });
 const User = mongoose.model("User", userSchema);
 
 // Server Setup
