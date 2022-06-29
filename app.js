@@ -39,6 +39,7 @@ mongoose.connect("mongodb://localhost:27017/userDB", {
 const userSchema = new mongoose.Schema ({
   username: String,
   password: String,
+  secret: String,
   googleId: String
 });
 userSchema.plugin(passportLocalMongoose);
@@ -149,8 +150,49 @@ app.route("/loginfailure")
 app.route("/secrets")
   .get(function(req, res) {
     if (req.isAuthenticated()) {
-      res.render("secrets");
+      User.find({secret:{$ne:null}}, function(err, foundUsers){usersWithSecrets:  {}
+        if (err) {
+          console.log(err);
+          res.send(err);
+        } else {
+          if (foundUsers){usersWithSecrets:  {}
+            res.render("secrets", {usersWithSecrets: foundUsers});
+          }
+        }
+
+      })
     } else {
       res.redirect("/login");
     }
+  });
+
+// '/submit'
+// GET: View page where user enter their secret
+// POST: Upload the new post to the secrets database
+app.route("/submit")
+  .get(function(req, res) {
+    if (req.isAuthenticated()) {
+      res.render("submit");
+    } else {
+      res.redirect("/login");
+    }
+  })
+  .post(function(req, res) {
+    const submittedSecret = req.body.secret;
+    const userID = req.user._id;
+    console.log(userID, "submitted a secret");
+
+    User.findById(userID, function(err, foundUser) {
+      if (err) {
+        console.log(err);
+        res.send(err);
+      } else {
+        if (foundUser) {
+          foundUser.secret = submittedSecret;
+          foundUser.save(function() {
+            res.redirect("/secrets");
+          });
+        }
+      }
+    });
   });
